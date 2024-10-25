@@ -1,0 +1,38 @@
+.word-container {
+    font-size: 100px;
+    font-weight: bold;
+  }
+  
+  .letter {
+    width: 100px;
+    height: 150px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .letter[data-flag="w"] {
+    background-image: url('/images/flags/usa flag.png'); /* USA */
+  }
+  
+  .letter[data-flag="o"] {
+    background-image: url('/images/flags/uk flag.png'); /* UK */
+  }
+  
+  .letter[data-flag="r"] {
+    background-image: url('/images/flags/india flag.png'); /* Canada */
+  }
+  
+  .letter[data-flag="l"] {
+    background-image: url('/images/flags/south africa.png'); /* Japan */
+  }
+  
+  .letter[data-flag="d"] {
+    background-image: url('/images/flags/greece flag.webp'); /* Germany */
+  }

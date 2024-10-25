@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum UserRole {
+  DOCTOR
+  PATIENT
+}
+
+
+
+model User {
+  id                     String                  @id @default(auto()) @map("_id") @db.ObjectId
+  name                   String
+  email                  String?                 @unique
+  emailVerified          DateTime?               @map("email_verified")
+  image                  String?
+  password               String?
+  role                   UserRole?               
+  isTwoFactorEnabled     Boolean                 @default(false)
+  twoFactorConfirmation  TwoFactorConfirmation?
+  doctorId               String?                 @db.ObjectId @map("doctor_id") 
+  patientId              String?                 @db.ObjectId @map("patient_id")
+
+
+  conversationIds String[] @db.ObjectId
+  conversations Conversation[] @relation(fields: [conversationIds], references: [id])
+  
+  seenMessageIds String[] @db.ObjectId
+  seenMessages Message[] @relation("Seen", fields: [seenMessageIds], references: [id])
+
+  accounts  Account[]
+  messages  Message[]
+
+  doctor    Doctor[]
+  patient   Patient[]
+  appointments Appointment[]
+
+  @@map("users")
+  @@index([doctorId])
+  @@index([patientId])
+}
+
+
+model Account {
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String  @db.ObjectId @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model VerificationToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String    
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String    
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String    
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String   @db.ObjectId
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+model Doctor {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  specialization         String
+  images                 String[]
+  aboutMe                String?
+  specialties            String?
+  certifications         String?
+  professionalExperience String?
+  languages              String?
+
+  user               User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String?  @db.ObjectId @map("user_id")
+  appointments       Appointment[]
+
+  @@map("doctors")
+}
+
+model Patient {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  country      String?
+  city         String?
+  savedDoctors String[] @db.ObjectId
+
+  user               User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String?  @db.ObjectId @map("user_id")
+
+  @@map("patients")
+}
+
+model Appointment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId  String   @db.ObjectId
+  userId    String   @db.ObjectId
+  date      DateTime
+  time      String
+  reason    String
+  
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("appointments")
+}
+
+
+model Conversation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt       DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+  name String?
+  
+  messagesIds String[] @db.ObjectId
+  messages Message[]
+
+  userIds String[] @db.ObjectId
+  users User[] @relation(fields: [userIds], references: [id])
+}
+
+model Message {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  body String?
+  image String?
+  createdAt DateTime @default(now())
+
+  seenIds String[] @db.ObjectId
+  seen User[] @relation("Seen", fields: [seenIds], references: [id])
+
+  conversationId String @db.ObjectId
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId String @db.ObjectId
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
